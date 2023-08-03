@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'package:camera/camera.dart';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'package:blindover_flutter/widgets/large_action_button.dart';
 import 'package:blindover_flutter/widgets/large_nudge_card.dart';
@@ -61,31 +62,41 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
   /// 최대로 변경 가능한 노출 범위 값
   double maxAvailableExposureOffset = 0.0;
 
+  /// 이미지 추론 결과 값
+  String output = "--";
+
   /// 카메라 해상도 설정
   final myResolutionPreset = ResolutionPreset.medium;
 
   ///- [uploadPictureToServer] 비동기 함수는 임시 저장된 이미지를 서버로 전송합니다.
-  Future<void> uploadPictureToServer() async {
-    const String url =
-        "OUR_SERVER_URL_LIKE_THIS{http://blindover.duckdns.org:8080/storage}";
+  Future<String> uploadPictureToServer() async {
+    const String url = "http://blindover.duckdns.org/photo";
     final file = File(await _pictureController.getTemporaryPicturePath());
     final dio = Dio();
     try {
       final formData = FormData.fromMap({
-        "image": await MultipartFile.fromFile(file.path),
+        "image": await MultipartFile.fromFile(
+          file.path,
+          contentType: MediaType("image", "jpeg"),
+        ),
       });
       final request = await dio.post(
         url,
-        data: {formData},
+        data: formData,
       );
       if (request.statusCode == 200) {
         log("이미지를 서버로 전송하는데 성공했습니다.${request.statusMessage} ${request.data}");
+        var data = request.data;
+        setState(() {
+          output = data;
+        });
       } else {
         log("이미지를 서버로 전송하는데 실패했습니다.${request.statusMessage} ${request.data}");
       }
     } on SocketException catch (e) {
       log("서버와 연결이 원활하지 않습니다.${e.message}");
     }
+    return "--";
   }
 
   ///- [capture] 비동기 함수는 사용자가 캡처 버튼을 누르면 실행되는 함수입니다.
@@ -100,7 +111,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
         await _pictureController.getTemporaryPicturePath();
         await _pictureController.takePictureToTemporaryFile(picture);
         log("사진을 캡처하는데 성공했습니다.${picture.path}");
-        // await uploadPictureToServer(); // TODO: 서버 배포 후 주석 해제
+        await uploadPictureToServer();
       }
     } on CameraException catch (e) {
       log("카메라를 동작하는데 실패했습니다.${e.code}${e.description}");
@@ -171,10 +182,10 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
             if (snapshot.connectionState == ConnectionState.done) {
               return Column(
                 children: [
-                  const LargeNudgeCard(
+                  LargeNudgeCard(
                     width: double.infinity,
                     height: 100.0,
-                    child: LargeText(words: "카메라 화면"),
+                    child: LargeText(words: output),
                   ),
                   Expanded(
                     child: CameraPreview(_cameraController),
