@@ -32,6 +32,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Flutter Version Management
+.fvm/flutter_sdk
+
 # Symbolication related
 app.*.symbols
 
