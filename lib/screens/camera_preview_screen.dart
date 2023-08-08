@@ -74,24 +74,32 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen>
     final file = File(await _pictureController.getTemporaryPicturePath());
     final dio = Dio();
     try {
+      debugPrint(file.path);
       final formData = FormData.fromMap({
-        "image": await MultipartFile.fromFile(
+        "file": await MultipartFile.fromFile(
           file.path,
           contentType: MediaType("image", "jpeg"),
         ),
       });
-      final request = await dio.post(
+      var response = await dio.request(
         url,
+        options: Options(
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "multipart/form-data",
+          },
+        ),
         data: formData,
       );
-      if (request.statusCode == 200) {
-        log("이미지를 서버로 전송하는데 성공했습니다.${request.statusMessage} ${request.data}");
-        var data = request.data;
+      if (response.statusCode == 200) {
+        log("이미지를 서버로 전송하는데 성공했습니다.${response.statusMessage} ${response.data}");
+        var data = response.data;
         setState(() {
           output = data;
         });
       } else {
-        log("이미지를 서버로 전송하는데 실패했습니다.${request.statusMessage} ${request.data}");
+        log("이미지를 서버로 전송하는데 실패했습니다.${response.statusMessage} ${response.data}");
       }
     } on SocketException catch (e) {
       log("서버와 연결이 원활하지 않습니다.${e.message}");
