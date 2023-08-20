@@ -15,7 +15,7 @@ dependencies:
   permission_handler: ^10.4.3
   path_provider: ^2.1.0
   flutter_launcher_icons: ^0.13.1
-  flutter_native_splash: ^2.3.1
+  flutter_native_splash: ^2.3.2
   http_parser: ^4.0.2
 
 dev_dependencies:
